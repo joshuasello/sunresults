@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 import requests
+from Tools.i18n.msgfmt import usage
 from bs4 import BeautifulSoup, Tag
 from plyer import notification
 from tabulate import tabulate
@@ -49,7 +50,7 @@ def main() -> None:
     while True:
         try:
             # Wait for a min
-            time.sleep(60)
+            #time.sleep(60)
 
             # Extract grades
             recent_results = user.fetch_results()
@@ -107,10 +108,10 @@ class User:
     LEGACY_LOGIN_DOMAIN = 'https://sso-legacy.sun.ac.za'
 
     def __init__(self, username: str, password: str):
-        self._cookies = None
-        self._endpoint = None
-        self._results_url = None
+        self._username = username
+        self._password = password
 
+    def fetch_results(self) -> dict[str, Result]:
         # Log user in
         login_url = f'{self.LEGACY_LOGIN_DOMAIN}/cas/login?service=https://web-apps.sun.ac.za/AcademicResults/shiro-cas'
 
@@ -119,17 +120,16 @@ class User:
         login_page: BeautifulSoup = BeautifulSoup(form_response.content.decode('utf-8'), 'html.parser')
 
         # Fill form login data
-        self._login_data: dict[str, str] = {tag.get_attribute_list('name')[0]: tag.get_attribute_list('value')[0]
-                                            for tag in login_page.find_all('input')
-                                            if tag.get_attribute_list('name')[0] is not None}
-        self._login_data['username'] = username
-        self._login_data['password'] = password
+        login_data: dict[str, str] = {tag.get_attribute_list('name')[0]: tag.get_attribute_list('value')[0]
+                                      for tag in login_page.find_all('input')
+                                      if tag.get_attribute_list('name')[0] is not None}
+        login_data['username'] = self._username
+        login_data['password'] = self._password
 
-        self._url: str = self.LEGACY_LOGIN_DOMAIN + login_page.form['action']
-        self._cookies = form_response.cookies
+        results_page_url: str = self.LEGACY_LOGIN_DOMAIN + login_page.form['action']
+        cookies = form_response.cookies
 
-    def fetch_results(self) -> dict[str, Result]:
-        results_response: requests.Response = requests.post(self._url, self._login_data, cookies=self._cookies)
+        results_response: requests.Response = requests.post(results_page_url, login_data, cookies=cookies)
         results_page: BeautifulSoup = BeautifulSoup(results_response.content.decode('utf-8'), 'html.parser')
 
         num_columns: int = 6
