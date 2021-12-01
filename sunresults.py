@@ -50,7 +50,7 @@ def main() -> None:
     while True:
         try:
             # Wait for a min
-            #time.sleep(60)
+            time.sleep(60)
 
             # Extract grades
             recent_results = user.fetch_results()
