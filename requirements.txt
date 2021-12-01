@@ -1,0 +1,5 @@
+requests~=2.26.0
+bs4~=0.0.1
+beautifulsoup4~=4.10.0
+plyer~=2.0.0
+tabulate~=0.8.9
